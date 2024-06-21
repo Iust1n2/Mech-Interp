@@ -2,7 +2,7 @@
 
 GPT-2 small circuit for our task:
 
-![](Automatic-Circuit-Discovery/acdc/ims_hybridretrieval_kl/img_new_20.png)
+![](Automatic-Circuit-Discovery/acdc/ims_hybridretrieval_kl/img_new_100.png)
 
 ## Using GPT-2
 
