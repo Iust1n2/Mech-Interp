@@ -2,7 +2,7 @@
 
 GPT-2 small circuit for our task:
 
-![](Automatic-Circuit-Discovery/acdc/ims_hybridretrieval_kl/img_new_100.png)
+![](Automatic-Circuit-Discovery/acdc/hybridretrieval/acdc_results/ims_hybridretrieval_indirect_0.15/img_new_71.png) 
 
 ## Using GPT-2
 
@@ -30,7 +30,9 @@ gen_tokens = model1.generate(
 
 - With `pipeline` the generator is not so customizable, but works
 
-## Prompting
+Notebooks for inference are inside the `gpt2` subdirectory.
+
+## Prompt Dataset
 
 In order to inspect both the factual recall retrieval with FFNs and in-context retrieval we must create a dual setting that simulates at the same time an abstractive and extractive task. 
 
@@ -52,62 +54,73 @@ In both examples, 1 appearing easier than 2, because it explicitly mentions the 
 
 After laying out the prompt setting, we need to methodically create a dataset of the same type of prompts, a collection of prompts that requires of the model, hopefully, to repeat the same process. 
 
-| Task                      |  Correct prompt                | Expected answer | Corrupted prompt | 
-|---------------------------------|----------------------------|-----------------|----------------|
-| Knowledge-Based In-Context Retrieval | Alice lives in France, Paris - Alice, John lives in Germany, Berlin - John, Peter lives in USA, Washington - | Peter | Alice lives in France, Paris - Alice, John lives in Germany, Berlin - John, Peter lives in Italy, Paris - Sara |  
+| Task                      |  Correct prompt                | Expected answer | Corrupted prompt |  Dataset | 
+|---------------------------------|----------------------------|-----------------|----------------|----------|
+| (Indirect) Knowledge-Based In-Context Retrieval | Prompt 1: Alice lives in France, Paris - Alice, John lives in Germany, Berlin - John, Peter lives in USA, Washington - & Prompt 2: Lucy lives in Turkey, Ankara - Lucy, Sara lives in Italy, Rome - Sara, Bob lives in Spain, Madrid - | Peter, Bob | first corruption is different country outside the prompt: Alice lives in France, Paris - Alice, John lives in Germany, Berlin - John, Peter lives in Spain, Washington - Peter & second corruption is repeated capital from the prompt: Lucy lives in Turkey, Ankara - Lucy, Sara lives in Italy, Rome - Sara, Bob lives in Spain, Ankara - Bob | Dataset 1 |
+| (Direct) Knowledge-Based In-Context Retrieval | Alice lives in France, Alice - Paris, John lives in Germany, John - Berlin, Peter lives in USA, Peter - | Washington | different name outside the prompt: Alice lives in France, Alice - Paris, John lives in Germany, John - Berlin, Peter lives in USA, Michael - Washington | Dataset 1direct |
+| (Indirect) Knowledge Retrieval | Rome - Italy, Madrid - Spain, Ottawa - Canada, Berlin -  | Germany |  we corrupt the middle city and we repeat the city which has a corruption to see if the model repeats the incorrect country or breaks: Rome - Italy, Bucharest - Spain, Ottawa - Canada, Bucharest -  |  Dataset 2indirect |
+| (Direct) Join | Alice lives in France, Alice - France, Bob lives in Germany, Bob - Germany, John lives in USA, John - | USA | the first corruption is person outside the prompt: "Lucy lives in Italy, Lucy - Italy, Tom lives in Spain, Tom - Spain, Sara lives in Canada, Michael -  & the second corruption is person repeated from the prompt: Alice lives in France, Alice - France, Bob lives in Germany, Bob - Germany, John lives in USA, Alice - | Dataset 3direct | 
+| (Direct) Knowledge Retrieval | Italy - Rome, Spain - Madrid, Canada - Ottawa, Germany -  | Berlin | the corruption is in the middle country and we repeat the country which has a corruption to see if the model repeats the incorrect city or breaks: Italy - Rome, Spain - Bucharest, Canada - Ottawa, Spain -  | Dataset 2 | 
+| (Indirect) Join | Prompt 1: Alice lives in France, France - Alice, Bob lives in Germany, Germany - Bob, John lives in USA, USA - & Prompt 2: Lucy lives in Italy, Italy - Lucy, Tom lives in Spain, Spain - Tom, Sara lives in Canada, Canada - | John, Sara | first corruption is city outside the prompt: Alice lives in France, France - Alice, Bob lives in Germany, Germany - Bob, John lives in USA, Peru - John & second corruption is city repeated from the prompt: Lucy lives in Italy, Italy - Lucy, Tom lives in Spain, Spain - Tom, Sara lives in Canada, Italy - Sara | Dataset 3 | 
 
 
-| batch | type      | question                                                                                             | answer | complete                                                                                             |
-|-------|-----------|------------------------------------------------------------------------------------------------------|--------|------------------------------------------------------------------------------------------------------|
-| 1     | correct   | "Alice lives in France, Paris - Alice, Bob lives in Germany, Berlin - Bob, John lives in USA, Washington - " | John   | "Alice lives in France, Paris - Alice, Bob lives in Germany, Berlin - Bob, John lives in USA, Washington - John" |
-| 1     | corrupted | "Alice lives in France, Paris - Alice, Bob lives in Germany, Berlin - Bob, John lives in USA, Paris - " | John   | "Alice lives in France, Paris - Alice, Bob lives in Germany, Berlin - Bob, John lives in USA, Paris - John" |
-| 1     | corrupted | "Alice lives in France, Paris - Alice, Bob lives in Germany, Berlin - Bob, John lives in USA, Berlin - " | John   | "Alice lives in France, Paris - Alice, Bob lives in Germany, Berlin - Bob, John lives in USA, Berlin - John" |
-| 1     | corrupted | "Alice lives in France, Paris - Alice, Bob lives in Germany, Berlin - Bob, John lives in USA, Madrid - " | John   | "Alice lives in France, Paris - Alice, Bob lives in Germany, Berlin - Bob, John lives in USA, Madrid - John" |
-| 1     | corrupted | "Alice lives in France, Paris - Alice, Bob lives in Germany, Berlin - Bob, John lives in USA, Chicago - " | John   | "Alice lives in France, Paris - Alice, Bob lives in Germany, Berlin - Bob, John lives in USA, Chicago - John" |
-| 1     | corrupted | "Alice lives in France, Paris - Alice, Bob lives in Germany, Berlin - Bob, John lives in USA, Istanbul - " | John   | "Alice lives in France, Paris - Alice, Bob lives in Germany, Berlin - Bob, John lives in USA, Istanbul - John" |
-| 1     | corrupted | "Alice lives in France, Paris - Alice, Bob lives in Germany, Berlin - Bob, John lives in USA, Washington - " | Alice  | "Alice lives in France, Paris - Alice, Bob lives in Germany, Berlin - Bob, John lives in USA, Washington - Alice" |
-| 1     | corrupted | "Alice lives in France, Paris - Alice, Bob lives in Germany, Berlin - Bob, John lives in USA, Washington - " | Bob    | "Alice lives in France, Paris - Alice, Bob lives in Germany, Berlin - Bob, John lives in USA, Washington - Bob" |
-| 1     | corrupted | "Alice lives in France, Paris - Alice, Bob lives in Germany, Berlin - Bob, John lives in USA, Washington - " | Peter  | "Alice lives in France, Paris - Alice, Bob lives in Germany, Berlin - Bob, John lives in USA, Washington - Peter" |
-| 1     | corrupted | "Alice lives in France, Paris - Alice, Bob lives in Germany, Berlin - Bob, John lives in Spain, Washington - " | John   | "Alice lives in France, Paris - Alice, Bob lives in Germany, Berlin - Bob, John lives in Spain, Washington - John" |
-| 2     | correct   | "Peter lives in Turkey, Ankara - Peter, Alice lives in Italy, Rome - Alice, Bob lives in France, Paris - " | Bob    | "Peter lives in Turkey, Ankara - Peter, Alice lives in Italy, Rome - Alice, Bob lives in France, Paris - Bob" |
-| 2     | corrupted | "Peter lives in Turkey, Ankara - Peter, Alice lives in Italy, Rome - Alice, Bob lives in France, Ankara - " | Bob    | "Peter lives in Turkey, Ankara - Peter, Alice lives in Italy, Rome - Alice, Bob lives in France, Ankara - Bob" |
-| 2     | corrupted | "Peter lives in Turkey, Ankara - Peter, Alice lives in Italy, Rome - Alice, Bob lives in France, Rome - " | Bob    | "Peter lives in Turkey, Ankara - Peter, Alice lives in Italy, Rome - Alice, Bob lives in France, Rome - Bob" |
-| 2     | corrupted | "Peter lives in Turkey, Ankara - Peter, Alice lives in Italy, Rome - Alice, Bob lives in France, Berlin - " | Bob    | "Peter lives in Turkey, Ankara - Peter, Alice lives in Italy, Rome - Alice, Bob lives in France, Berlin - Bob" |
-| 2     | corrupted | "Peter lives in Turkey, Ankara - Peter, Alice lives in Italy, Rome - Alice, Bob lives in France, Marseille - " | Bob    | "Peter lives in Turkey, Ankara - Peter, Alice lives in Italy, Rome - Alice, Bob lives in France, Marseille - Bob" |
-| 2     | corrupted | "Peter lives in Turkey, Ankara - Peter, Alice lives in Italy, Rome - Alice, Bob lives in France, Toronto - " | Bob    | "Peter lives in Turkey, Ankara - Peter, Alice lives in Italy, Rome - Alice, Bob lives in France, Toronto - Bob" |
-| 2     | corrupted | "Peter lives in Turkey, Ankara - Peter, Alice lives in Italy, Rome - Alice, Bob lives in France, Paris - " | Peter  | "Peter lives in Turkey, Ankara - Peter, Alice lives in Italy, Rome - Alice, Bob lives in France, Paris - Peter" |
-| 2     | corrupted | "Peter lives in Turkey, Ankara - Peter, Alice lives in Italy, Rome - Alice, Bob lives in France, Paris - " | Alice  | "Peter lives in Turkey, Ankara - Peter, Alice lives in Italy, Rome - Alice, Bob lives in France, Paris - Alice" |
-| 2     | corrupted | "Peter lives in Turkey, Ankara - Peter, Alice lives in Italy, Rome - Alice, Bob lives in France, Paris - " | John   | "Peter lives in Turkey, Ankara - Peter, Alice lives in Italy, Rome - Alice, Bob lives in France, Paris - John" |
-| 2     | corrupted | "Peter lives in Turkey, Ankara - Peter, Alice lives in Italy, Rome - Alice, Bob lives in Portugal, Paris - " | Bob    | "Peter lives in Turkey, Ankara - Peter, Alice lives in Italy, Rome - Alice, Bob lives in Portugal, Paris - Bob" |
-
-
-Prompt structure: 
-
-[P1] [Verb] [C1], [K1] - [P1]... until [P3]
-
-The query: [K3] - & Answer: [P3]
-
-The scope of this experiment is to find a the circuit of components inside the model that points towards a typical behavior that happens when prompted the same type of prompt that we described earlier. A method that automates circuit finding in LLMs is the Automatic Circuit Discovery [ACDC](https://arxiv.org/pdf/2304.14997). They propose a three step workflow for this:
+The scope of this experiment is to find a the circuit of components inside the model that points towards a typical behavior that happens when prompted the same type of prompt. A method that automates circuit finding in LLMs is the Automatic Circuit Discovery [ACDC](https://arxiv.org/pdf/2304.14997). They propose a three step workflow for this:
 
 ### 1. Observe a behavior 
 
-or task that a neural network displays, create a dataset that reproduces
-the behavior in question, and choose a metric to measure the extent to which the model
-performs the task. 
-
-![Examples of prompts and task used in the paper](image.png)
+or task that a neural network displays, create a dataset that reproduces the behavior in question, and choose a metric to measure the extent to which the model performs the task. We have chosen KL divergence for our metric.
 
 ### 2. Define the scope of the circuit interpretation, 
 
-i.e. decide to what level of granularity (e.g. attention
-heads and MLP layers, individual neurons, whether these are split by token position) at which
-one wants to analyze the network. This results in a computational graph of interconnected
-model units.
+i.e. decide to what level of granularity (e.g. attention heads and MLP layers, individual neurons, whether these are split by token position) at which one wants to analyze the network. This results in a computational graph of interconnected model units that perform the given task.
 
 ### 3. Perform an extensive and iterative series of patching experiments, 
 
-with the goal of removing as many unnecessary components and connections from the model as possible.
+with the goal of removing as many unnecessary edge connections and nodes from the model as possible. 
+ 
 
+## ACDC for Knowledge-Based In-Context Retrieval
 
+Create and compare circuits for the following: 
 
+1. indirect KBICR with indirect K + J 
+2. direct KBICR with direct K + J
 
+To run the ACDC algorithm on a task (from Prompting), three steps are required:
+
+First, in `acdc/hybridretrieval/utils.py` in line 20 import the dataset: 
+```
+from acdc.hybridretrieval.hybrid_retrieval_dataset3direct import HybridRetrievalDataset
+```
+
+Then, in `acdc/main.py` in line 390 use a save path like so:
+```
+save_path = "acdc/hybridretrieval/acdc_results/ims_hybridretrieval_indirect_0.15"
+```
+
+And finally run the following command in the terminal: 
+```
+python main.py --task hybrid-retrieval --zero-ablation --threshold 0.15 --indices-mode reverse --first-cache-cpu False --second-cache-cpu False --max-num-epochs 100000 > log_kbicr_direct_0.15.txt 2>&1
+```
+
+! **Note**: Every ACDC run was done with a KL divergence threshold of 0.15. As we experimented with a smaller threshold, as the authors did in the IOI experiment, we found out that the value of the threshold is important in determining the outcome of the circuit. We ran ACDC with a KL divergence ranging from 0.7 to 0.1. The former was penalizing the model too much and the latter was not excluding as many edges as we would find it useful for post-hoc interpretation.
+
+### Circuit recovery
+
+In order to verify the performance of the task circuit, because our task is composed of two subtasks: Knowledge Retrieval and Join, by running ACDC again for the two subtasks we can verify if the two resulting circuits use most of the same components. 
+
+This come as an additional phase in our experiment. We want to see if components for either or from the two smaller circuits are recovered in the bigger circuits. Algorithmically, we created a setting in which nodes fall into 7 categories and for simpliciy we labelled them as J (Join), K (Knowledge) and KJ (Join + Knowledge). So each node can be of the following: 
+
+1. J
+2. K
+3. KJ
+4. J & K
+5. J & KJ
+6. K & KJ
+7. J & K & KJ
+
+This second phase of our experiment follows this intuition:
+
+First, we convert .gv files for each of the task and subtasks to TGF files (Trivial Graph Forma which can be read by most interactive graph softwares). Script is in `acdc/hybridretrieval/convert_gv_to_tgf.py`.
+
+Second, we need to verify if node components inside of a .tgf is found in another file or in multiple. To do so we need to manually label them according to the previous notations. Script is in `acdc/hbyridretrieval/graph_overlaps_kj_labels.py`. We generate an equivalent TGF which instead assigns colors as labels for visualization purposes. After we generate a `combined_graph.tgf` file we use the yEd software for visualizations, which thankfully supports multiple graph layouts. That way we can generate a recovered circuit with color coded nodes that correspond to helper circuits.   

@@ -1,3 +1,6 @@
-gpt2/image.png
 github_pat.md
 .vscode/
+garbage/
+Automatic-Circuit-Discovery/acdc/__pycache__
+Automatic-Circuit-Discovery/acdc/ims/
+notes.md
