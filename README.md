@@ -2,7 +2,7 @@
 
 GPT-2 small circuit for our task:
 
-![](assets/img_new_71.png) 
+![](assets/circuit.png) 
 
 ## Using GPT-2
 
