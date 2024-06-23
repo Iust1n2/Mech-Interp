@@ -4,3 +4,7 @@ garbage/
 Automatic-Circuit-Discovery/acdc/__pycache__
 Automatic-Circuit-Discovery/acdc/ims/
 notes.md
+Automatic-Circuit-Discovery/acdc/passwords/
+Automatic-Circuit-Discovery/acdc/hybridretrieval/acdc_results/
+assets/kbicr_indirect_kj_labels_mirrored.graphml
+icl_task_vectors/

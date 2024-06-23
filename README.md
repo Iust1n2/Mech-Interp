@@ -1,8 +1,10 @@
 # Automatic Circuit Discovery for Knowledge-Based In-Context Retrieval
 
-GPT-2 small circuit for our task:
 
-![](assets/circuit.png) 
+<figure>
+  <img src="assets/circuit.png">
+  <div style="text-align: center;"><figcaption>GPT-2 small circuit for our indirect Knowledge-Based In-Context Retrieval</figcaption></div>
+</figure>
 
 ## Using GPT-2
 
@@ -32,52 +34,47 @@ gen_tokens = model1.generate(
 
 Notebooks for inference are inside the `gpt2` subdirectory.
 
+## ACDC 
+
+Our aim is to find a circuit of components inside the model that points towards a typical behavior that happens when prompted the same type of prompt. A method that automates circuit finding in LLMs is Automatic Circuit Discovery [(ACDC)](https://arxiv.org/pdf/2304.14997). The main author's blog [post](https://arthurconmy.github.io/automatic_circuit_discovery/) is a great way of understanding ACDC.
+Key takeaways from the paper for ACDC:
+
+1. Observe a behavior or task that a neural network displays, create a dataset that reproduces the behavior in question, and choose a metric to measure the extent to which the model performs the task. We have chosen KL divergence for our metric.
+
+2. Define the scope of the circuit interpretation, i.e. decide to what level of granularity (e.g. attention heads and MLP layers, individual neurons, whether these are split by token position) at which one wants to analyze the network. This results in a computational graph of interconnected model units that perform the given task.
+
+3. Perform an extensive and iterative series of patching experiments, with the goal of removing as many unnecessary edge connections and nodes from the model as possible without hurting performance. 
+
+We designed a task that combines Knowledge Retrieval from memory with In-Context Learning in a single prompt setting, which we call Knowledge-Based In-Context Retrieval.   
+
+Knowledge Retrieval : 
+```
+France - Paris, Germany - Berlin, USA - ...
+```
+
+ICL or informally used in our workflow as Join (relationship between person and country/capital):
+```
+Alice lives in France, Alice - France.
+Bob lives in Germany, Bob - Germany.
+John lives in USA, John - ... 
+```
+
+The resulting prompt is `Alice lives in France, Paris - Alice, John lives in Germany, Berlin - John, Peter lives in USA, Washington -` and it was also extended for direct and indirect retrieval which changes the dynamic for next-token prediction. 
+
+In order to validate the circuit for our task we designed prompt datasets for KBICR Knolwedge Retrieval only and Join only with the necessary corruptions for running ACDC. The prompt datasets alongside explanations for corruptions are given in the table below and in `acdc/hybridretrieval/datasets/` and our methodology for circuit validation is described in the [Circuit Recovery section](#circuit-recovery).  
+
 ## Prompt Dataset
 
-In order to inspect both the factual recall retrieval with FFNs and in-context retrieval we must create a dual setting that simulates at the same time an abstractive and extractive task. 
 
-Example 1: 
-```
-Alice is from France. The capital of France is Paris.
-Bob is from Germany. The capital of Germany is Berlin.
-John is from the USA. The capital of the USA is 
-```
+| Task                                          | Correct prompt                                                                                                                                                               | Expected answer | Corruption                                                                                                                                                                                                                     | Corrupted prompt                                                                                                                                                                            | Dataset              |
+|-----------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------|
+| (Indirect) Knowledge-Based In-Context Retrieval | Prompt 1: Alice lives in France, Paris - Alice, John lives in Germany, Berlin - John, Peter lives in USA, Washington - & Prompt 2: Lucy lives in Turkey, Ankara - Lucy, Sara lives in Italy, Rome - Sara, Bob lives in Spain, Madrid - | Peter, Bob      | First corruption is different country outside the prompt & Second corruption is repeated capital from the prompt                                                                                                                | Alice lives in France, Paris - Alice, John lives in Germany, Berlin - John, Peter lives in Spain, Washington - Peter & Lucy lives in Turkey, Ankara - Lucy, Sara lives in Italy, Rome - Sara, Bob lives in Spain, Ankara - Bob    | Dataset 1  Indirect           |
+| (Direct) Knowledge-Based In-Context Retrieval   | Alice lives in France, Alice - Paris, John lives in Germany, John - Berlin, Peter lives in USA, Peter -                                                                 | Washington      | Different name outside the prompt                                                                                                                                                                                                | Alice lives in France, Alice - Paris, John lives in Germany, John - Berlin, Peter lives in USA, Michael - Washington                                                                                                           | Dataset 1 Direct     |
+| (Indirect) Knowledge Retrieval                 | Rome - Italy, Madrid - Spain, Ottawa - Canada, Berlin -                                                                                                                                  | Germany         | Corrupt the middle city and repeat the city which has a corruption to see if the model repeats the incorrect country or breaks                                                                                                    | Rome - Italy, Bucharest - Spain, Ottawa - Canada, Bucharest -                                                                                                                                                                   | Dataset 2 Indirect   |
+| (Direct) Join                                  | Alice lives in France, Alice - France, Bob lives in Germany, Bob - Germany, John lives in USA, John -                                                                                    | USA             | First corruption is person outside the prompt & Second corruption is person repeated from the prompt                                                                                                                             | Lucy lives in Italy, Lucy - Italy, Tom lives in Spain, Tom - Spain, Sara lives in Canada, Michael -  & Alice lives in France, Alice - France, Bob lives in Germany, Bob - Germany, John lives in USA, Alice -                | Dataset 3 Direct     |
+| (Direct) Knowledge Retrieval                   | Italy - Rome, Spain - Madrid, Canada - Ottawa, Germany -                                                                                                                                    | Berlin          | Corruption in the middle country and repeat the country which has a corruption to see if the model repeats the incorrect city or breaks                                                                                          | Italy - Rome, Spain - Bucharest, Canada - Ottawa, Spain -                                                                                                                                                                       | Dataset 2 Direct     |
+| (Indirect) Join                                | Prompt 1: Alice lives in France, France - Alice, Bob lives in Germany, Germany - Bob, John lives in USA, USA - & Prompt 2: Lucy lives in Italy, Italy - Lucy, Tom lives in Spain, Spain - Tom, Sara lives in Canada, Canada -        | John, Sara      | First corruption is city outside the prompt & Second corruption is city repeated from the prompt                                                                                                                                | Alice lives in France, France - Alice, Bob lives in Germany, Germany - Bob, John lives in USA, Peru - John & Lucy lives in Italy, Italy - Lucy, Tom lives in Spain, Spain - Tom, Sara lives in Canada, Italy - Sara             | Dataset 3 Indirect   |
 
-Example 2. 
-```
-Alice is from France, and she lives in Paris.
-Bob is from Germany, and he lives in Berlin.
-John is from the USA, and he lives in
-```
-
-In both examples, 1 appearing easier than 2, because it explicitly mentions the task in the context as being country-capital and 2 being inexplicitly referring to country-capital but rather a place of residence that corresponds to the capital, for the in context extractive part we repeat the task in the prompt for 2 times and for the 3-rd time the LLMs needs to predict the correct capital by following a previous pattern and for the factual recall from memory part the model needs to find the correspondence between country a capital, an apparently trivial task which even GPT-small can manage. However, the hard part is figuring out the order, if there is one, of this subtle subprocesses.
-
-After laying out the prompt setting, we need to methodically create a dataset of the same type of prompts, a collection of prompts that requires of the model, hopefully, to repeat the same process. 
-
-| Task                      |  Correct prompt                | Expected answer | Corrupted prompt |  Dataset | 
-|---------------------------------|----------------------------|-----------------|----------------|----------|
-| (Indirect) Knowledge-Based In-Context Retrieval | Prompt 1: Alice lives in France, Paris - Alice, John lives in Germany, Berlin - John, Peter lives in USA, Washington - & Prompt 2: Lucy lives in Turkey, Ankara - Lucy, Sara lives in Italy, Rome - Sara, Bob lives in Spain, Madrid - | Peter, Bob | first corruption is different country outside the prompt: Alice lives in France, Paris - Alice, John lives in Germany, Berlin - John, Peter lives in Spain, Washington - Peter & second corruption is repeated capital from the prompt: Lucy lives in Turkey, Ankara - Lucy, Sara lives in Italy, Rome - Sara, Bob lives in Spain, Ankara - Bob | Dataset 1 |
-| (Direct) Knowledge-Based In-Context Retrieval | Alice lives in France, Alice - Paris, John lives in Germany, John - Berlin, Peter lives in USA, Peter - | Washington | different name outside the prompt: Alice lives in France, Alice - Paris, John lives in Germany, John - Berlin, Peter lives in USA, Michael - Washington | Dataset 1direct |
-| (Indirect) Knowledge Retrieval | Rome - Italy, Madrid - Spain, Ottawa - Canada, Berlin -  | Germany |  we corrupt the middle city and we repeat the city which has a corruption to see if the model repeats the incorrect country or breaks: Rome - Italy, Bucharest - Spain, Ottawa - Canada, Bucharest -  |  Dataset 2indirect |
-| (Direct) Join | Alice lives in France, Alice - France, Bob lives in Germany, Bob - Germany, John lives in USA, John - | USA | the first corruption is person outside the prompt: "Lucy lives in Italy, Lucy - Italy, Tom lives in Spain, Tom - Spain, Sara lives in Canada, Michael -  & the second corruption is person repeated from the prompt: Alice lives in France, Alice - France, Bob lives in Germany, Bob - Germany, John lives in USA, Alice - | Dataset 3direct | 
-| (Direct) Knowledge Retrieval | Italy - Rome, Spain - Madrid, Canada - Ottawa, Germany -  | Berlin | the corruption is in the middle country and we repeat the country which has a corruption to see if the model repeats the incorrect city or breaks: Italy - Rome, Spain - Bucharest, Canada - Ottawa, Spain -  | Dataset 2 | 
-| (Indirect) Join | Prompt 1: Alice lives in France, France - Alice, Bob lives in Germany, Germany - Bob, John lives in USA, USA - & Prompt 2: Lucy lives in Italy, Italy - Lucy, Tom lives in Spain, Spain - Tom, Sara lives in Canada, Canada - | John, Sara | first corruption is city outside the prompt: Alice lives in France, France - Alice, Bob lives in Germany, Germany - Bob, John lives in USA, Peru - John & second corruption is city repeated from the prompt: Lucy lives in Italy, Italy - Lucy, Tom lives in Spain, Spain - Tom, Sara lives in Canada, Italy - Sara | Dataset 3 | 
-
-
-The scope of this experiment is to find a the circuit of components inside the model that points towards a typical behavior that happens when prompted the same type of prompt. A method that automates circuit finding in LLMs is the Automatic Circuit Discovery [ACDC](https://arxiv.org/pdf/2304.14997). They propose a three step workflow for this:
-
-### 1. Observe a behavior 
-
-or task that a neural network displays, create a dataset that reproduces the behavior in question, and choose a metric to measure the extent to which the model performs the task. We have chosen KL divergence for our metric.
-
-### 2. Define the scope of the circuit interpretation, 
-
-i.e. decide to what level of granularity (e.g. attention heads and MLP layers, individual neurons, whether these are split by token position) at which one wants to analyze the network. This results in a computational graph of interconnected model units that perform the given task.
-
-### 3. Perform an extensive and iterative series of patching experiments, 
-
-with the goal of removing as many unnecessary edge connections and nodes from the model as possible. 
- 
 
 ## ACDC for Knowledge-Based In-Context Retrieval
 
@@ -103,7 +100,7 @@ And finally run the following command in the terminal:
 python main.py --task hybrid-retrieval --zero-ablation --threshold 0.15 --indices-mode reverse --first-cache-cpu False --second-cache-cpu False --max-num-epochs 100000 > log_kbicr_direct_0.15.txt 2>&1
 ```
 
-! **Note**: Every ACDC run was done with a KL divergence threshold of 0.15. As we experimented with a smaller threshold, as the authors did in the IOI experiment, we found out that the value of the threshold is important in determining the outcome of the circuit. We ran ACDC with a KL divergence ranging from 0.7 to 0.1. The former was penalizing the model too much and the latter was not excluding as many edges as we would find it useful for post-hoc interpretation.
+! **Note**: Every ACDC run was done with a KL divergence threshold of 0.15. As we experimented with a smaller threshold, as the authors did in the IOI (Indirect Object Identification) task, we found out that the value of the threshold is important in determining the outcome of the circuit. We ran ACDC with a KL divergence ranging from 0.7 to 0.1. The former was penalizing the model too much and the latter was not excluding as many edges as we would find it useful for post-hoc interpretation.
 
 ### Circuit recovery
 
@@ -123,4 +120,32 @@ This second phase of our experiment follows this intuition:
 
 First, we convert .gv files for each of the task and subtasks to TGF files (Trivial Graph Forma which can be read by most interactive graph softwares). Script is in `acdc/hybridretrieval/convert_gv_to_tgf.py`.
 
-Second, we need to verify if node components inside of a .tgf is found in another file or in multiple. To do so we need to manually label them according to the previous notations. Script is in `acdc/hbyridretrieval/graph_overlaps_kj_labels.py`. We generate an equivalent TGF which instead assigns colors as labels for visualization purposes. After we generate a `combined_graph.tgf` file we use the yEd software for visualizations, which thankfully supports multiple graph layouts. That way we can generate a recovered circuit with color coded nodes that correspond to helper circuits.   
+Second, we need to verify if node components inside of a .tgf is found in another file or in multiple. To do so we need to label them according to the previous notations. Script is in `acdc/hbyridretrieval/graph_overlaps_kj_labels.py`. We generate an equivalent TGF which instead assigns colors as labels for visualization purposes. 
+
+After we generate a `combined_graph.tgf` file we use the [yEd](https://www.yworks.com/products/yed) software for interactive and  customizable visualizations, which thankfully supports multiple graph layouts. That way we can generate a recovered circuit with color coded nodes that correspond to smaller circuits.   
+
+<figure>
+  <img src="assets/kbicr_indirect_kj_labels_mirrored.png">
+  <div style="text-align: center;"><figcaption>GPT2-Small circuit with K, J & KJ edge labels</figcaption></div>
+</figure>
+
+### Explainability
+
+Now we have three resources to check for internal circuits and information flow for our task: 
+
+1. Dissecting Factual Associations:
+    - link to [repo](https://github.com/google-research/google-research/tree/master/dissecting_factual_predictions)
+    - `dissecting_factual_predictions/factual_associations_dissection.ipynb`
+    - ! Note: Works for generating the first graphs for circuit flow with attention knockout to token positions and attribute extraction rates. The vocab projection part errors, probably because it needs adaptation for GPT2-Small, as pointed out in the README
+
+2. In-Context Learning Creates Task Vectors: 
+    - link to [repo](https://github.com/roeehendel/icl_task_vectors)
+    - `icl_task_vectors/exploration.ipynb` 
+    - ! Note: .yaml environment not working properly, tried with a `pip install -r requirements.txt`, modified the code to run GPT2-Small but the code has some further problems. Might look into it just for code intuition and suggestions for working with Hooks in Transformers  
+
+2. Language Models Implement Word2Vec Arithmetic: 
+    - link to [repo](https://github.com/jmerullo/lm_vector_arithmetic/blob/main/demo.ipynb)
+    - `word2vec_llm/word2vec_llm.ipynb`
+    - ! Note: It is probably the easiest out of the 3 to customize for GPT2-Small. Nice and clean code for vocabulary projections for overall use in MLPs and heads.
+
+
