@@ -138,14 +138,14 @@ Now we have three resources to check for internal circuits and information flow 
     - `dissecting_factual_predictions/factual_associations_dissection.ipynb`
     - ! Note: Works for generating the first graphs for circuit flow with attention knockout to token positions and attribute extraction rates. The vocab projection part errors, probably because it needs adaptation for GPT2-Small, as pointed out in the README
 
-2. In-Context Learning Creates Task Vectors: 
+<!-- 2. In-Context Learning Creates Task Vectors: 
     - link to [repo](https://github.com/roeehendel/icl_task_vectors)
     - `icl_task_vectors/exploration.ipynb` 
-    - ! Note: .yaml environment not working properly, tried with a `pip install -r requirements.txt`, modified the code to run GPT2-Small but the code has some further problems. Might look into it just for code intuition and suggestions for working with Hooks in Transformers  
+    - ! Note: .yaml environment not working properly, tried with a `pip install -r requirements.txt`, modified the code to run GPT2-Small but the code has some further problems. Might look into it just for code intuition and suggestions for working with Hooks in Transformers   -->
 
 2. Language Models Implement Word2Vec Arithmetic: 
     - link to [repo](https://github.com/jmerullo/lm_vector_arithmetic/blob/main/demo.ipynb)
-    - `word2vec_llm/word2vec_llm.ipynb`
+    - `word2vec_llm/word2vec_kbicr.ipynb`
     - ! Note: It is probably the easiest out of the 3 to customize for GPT2-Small. Nice and clean code for vocabulary projections for overall use in MLPs and heads.
 
 
