@@ -2,7 +2,7 @@
 
 
 <figure>
-  <img src="assets/circuit.png">
+  <img src="assets/acdc_circuit.png">
   <div style="text-align: center;"><figcaption>GPT-2 small circuit for our indirect Knowledge-Based In-Context Retrieval</figcaption></div>
 </figure>
 
