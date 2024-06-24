@@ -17,3 +17,5 @@ dissecting_factual_associations/kbicr_results/attention_knockout_rome.png
 dissecting_factual_associations/kbicr_results/tex_tables/
 dissecting_factual_associations/wikipedia_paragraphs.csv
 dissecting_factual_associations/wiki_data.py
+assets/combined_circuit.svg
+assets/combined_circuit.graphml

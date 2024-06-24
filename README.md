@@ -122,11 +122,19 @@ First, we convert .gv files for each of the task and subtasks to TGF files (Triv
 
 Second, we need to verify if node components inside of a .tgf is found in another file or in multiple. To do so we need to label them according to the previous notations. Script is in `acdc/hbyridretrieval/graph_overlaps_kj_labels.py`. We generate an equivalent TGF which instead assigns colors as labels for visualization purposes. 
 
-After we generate a `combined_graph.tgf` file we use the [yEd](https://www.yworks.com/products/yed) software for interactive and  customizable visualizations, which thankfully supports multiple graph layouts. That way we can generate a recovered circuit with color coded nodes that correspond to smaller circuits.   
+After we generate a `combined_graph.tgf` file we need several steps before we can use the [yEd](https://www.yworks.com/products/yed) software for interactive and  customizable visualizations, which thankfully supports multiple graph layouts. That way we can generate a recovered circuit with color coded nodes that correspond to smaller circuits.   
+<!-- 
+First, run `dot.py` to for conversion to .gv format.
+
+Second run this command in terminal of the saved directory:
+
+```
+gv2gml combined_graph_indirect_color_labels.gv > combined_graph_indirect_color_labels.gml 
+``` -->
 
 <figure>
-  <img src="assets/kbicr_indirect_kj_labels_mirrored.png">
-  <div style="text-align: center;"><figcaption>GPT2-Small circuit with K, J & KJ edge labels</figcaption></div>
+  <img src="assets/combined_circuit_overlap.png">
+  <div style="text-align: center;"><figcaption>GPT2-Small circuit with K, J & M edge labels</figcaption></div>
 </figure>
 
 ### Explainability
@@ -147,5 +155,3 @@ Now we have three resources to check for internal circuits and information flow 
     - link to [repo](https://github.com/jmerullo/lm_vector_arithmetic/blob/main/demo.ipynb)
     - `word2vec_llm/word2vec_kbicr.ipynb`
     - ! Note: It is probably the easiest out of the 3 to customize for GPT2-Small. Nice and clean code for vocabulary projections for overall use in MLPs and heads.
-
-
