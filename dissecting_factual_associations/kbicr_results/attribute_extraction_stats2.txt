@@ -1,0 +1,30 @@
+Attribute extraction statistics: Number of extracting layers
+
+Averaging over examples with >=1 extraction events. 
+	
+proj_vec	attribute_in_top_1	layer
+0	MHSA	True	1.315789
+1	MHSA block all but subject-last + last	True	1.000000
+2	MHSA block last	True	1.000000
+3	MHSA block non-subject ex. last	True	1.000000
+4	MHSA block subject	True	1.000000
+5	MHSA block subject-last	True	1.000000
+6	MHSA block subject-last + last	True	1.000000
+7	MHSA*	True	1.315789
+8	MLP	True	1.000000
+9	MSHA block all but last	True	1.000000
+proj_vec	attribute_in_top_1
+0	MHSA	1.25
+1	MHSA block all	0.00
+2	MHSA block all but subject-last	0.00
+3	MHSA block all but subject-last + last	0.10
+4	MHSA block last	0.05
+5	MHSA block non-subject	0.00
+6	MHSA block non-subject ex. last	0.10
+7	MHSA block subject	0.05
+8	MHSA block subject-last	0.05
+9	MHSA block subject-last + last	0.05
+10	MHSA*	1.25
+11	MLP	0.15
+12	MSHA block all but first	0.00
+13	MSHA block all but last	0.10

@@ -1,0 +1,11 @@
+Correlation between ATTN vs. MLP extraction events
+
+20
+MHSA_ex  MLP_ex
+True     False     80.0
+         True      15.0
+False    False      5.0
+dtype: float64
+3
+True    100.0
+Name: MHSA_before_MLP, dtype: float64

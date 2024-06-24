@@ -1,0 +1,17 @@
+Attribute extraction statistics: Per-example extraction rate (across layers)
+
+proj_vec	attribute_in_top_1
+0	MHSA	0.95
+10	MHSA*	0.95
+11	MLP	0.15
+3	MHSA block all but subject-last + last	0.10
+6	MHSA block non-subject ex. last	0.10
+13	MSHA block all but last	0.10
+4	MHSA block last	0.05
+7	MHSA block subject	0.05
+8	MHSA block subject-last	0.05
+9	MHSA block subject-last + last	0.05
+1	MHSA block all	0.00
+2	MHSA block all but subject-last	0.00
+5	MHSA block non-subject	0.00
+12	MSHA block all but first	0.00
