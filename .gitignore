@@ -6,5 +6,14 @@ Automatic-Circuit-Discovery/acdc/ims/
 notes.md
 Automatic-Circuit-Discovery/acdc/passwords/
 Automatic-Circuit-Discovery/acdc/hybridretrieval/acdc_results/
+Automatic-Circuit-Discovery/acdc/hybridretrieval/mlp_proj.txt
 assets/kbicr_indirect_kj_labels_mirrored.graphml
+assets/kbicr_indirect_kj_labels_mirrored.svg
 icl_task_vectors/
+Automatic-Circuit-Discovery/acdc/hybridretrieval/test.ipynb
+dissecting_factual_associations/kbicr_results/attribute_extraction_rome.png
+dissecting_factual_associations/kbicr_results/intervention_rome.png
+dissecting_factual_associations/kbicr_results/attention_knockout_rome.png
+dissecting_factual_associations/kbicr_results/tex_tables/
+dissecting_factual_associations/wikipedia_paragraphs.csv
+dissecting_factual_associations/wiki_data.py
