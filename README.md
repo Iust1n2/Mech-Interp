@@ -122,7 +122,7 @@ First, we convert .gv files for each of the task and subtasks to TGF files (Triv
 
 Second, we need to verify if node components inside of a .tgf is found in another file or in multiple. To do so we need to label them according to the previous notations. Script is in `acdc/hbyridretrieval/graph_overlaps_kj_labels.py`. We generate an equivalent TGF which instead assigns colors as labels for visualization purposes. 
 
-After we generate a `combined_graph.tgf` file we need several steps before we can use the [yEd](https://www.yworks.com/products/yed) software for interactive and  customizable visualizations, which thankfully supports multiple graph layouts. That way we can generate a recovered circuit with color coded nodes that correspond to smaller circuits.   
+After we generate a `combined_graph.tgf` file we can run it in [yEd](https://www.yworks.com/products/yed) software for interactive and  customizable visualizations, which thankfully supports directed graph layouts. That way we can generate a recovered circuit with color coded nodes that correspond to smaller circuits.   
 <!-- 
 First, run `dot.py` to for conversion to .gv format.
 
