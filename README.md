@@ -45,14 +45,14 @@ Key takeaways from the paper for ACDC:
 
 3. Perform an extensive and iterative series of patching experiments, with the goal of removing as many unnecessary edge connections and nodes from the model as possible without hurting performance. 
 
-We designed a task that combines Knowledge Retrieval from memory with In-Context Learning in a single prompt setting, which we call Knowledge-Based In-Context Retrieval.   
+We designed a task that combines Knowledge Retrieval from memory with In-Context Retrieval in a single prompt setting, which we call Knowledge-Based In-Context Retrieval.   
 
-Knowledge Retrieval : 
+Knowledge Retrieval: 
 ```
 France - Paris, Germany - Berlin, USA - ...
 ```
 
-ICL or informally used in our workflow as Join (relationship between person and country/capital):
+In-Context Retrieval or informally used in our workflow as Join (relationship between person and country/capital):
 ```
 Alice lives in France, Alice - France.
 Bob lives in Germany, Bob - Germany.
@@ -68,26 +68,20 @@ In order to validate the circuit for our task we designed prompt datasets for KB
 
 | Task                                          | Correct prompt                                                                                                                                                               | Expected answer | Corruption                                                                                                                                                                                                                     | Corrupted prompt                                                                                                                                                                            | Dataset              |
 |-----------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------|
-| (Indirect) Knowledge-Based In-Context Retrieval | Prompt 1: Alice lives in France, Paris - Alice, John lives in Germany, Berlin - John, Peter lives in USA, Washington - & Prompt 2: Lucy lives in Turkey, Ankara - Lucy, Sara lives in Italy, Rome - Sara, Bob lives in Spain, Madrid - | Peter, Bob      | First corruption is different country outside the prompt & Second corruption is repeated capital from the prompt                                                                                                                | Alice lives in France, Paris - Alice, John lives in Germany, Berlin - John, Peter lives in Spain, Washington - Peter & Lucy lives in Turkey, Ankara - Lucy, Sara lives in Italy, Rome - Sara, Bob lives in Spain, Ankara - Bob    | Dataset 1  Indirect           |
-| (Direct) Knowledge-Based In-Context Retrieval   | Alice lives in France, Alice - Paris, John lives in Germany, John - Berlin, Peter lives in USA, Peter -                                                                 | Washington      | Different name outside the prompt                                                                                                                                                                                                | Alice lives in France, Alice - Paris, John lives in Germany, John - Berlin, Peter lives in USA, Michael - Washington                                                                                                           | Dataset 1 Direct     |
-| (Indirect) Knowledge Retrieval                 | Rome - Italy, Madrid - Spain, Ottawa - Canada, Berlin -                                                                                                                                  | Germany         | Corrupt the middle city and repeat the city which has a corruption to see if the model repeats the incorrect country or breaks                                                                                                    | Rome - Italy, Bucharest - Spain, Ottawa - Canada, Bucharest -                                                                                                                                                                   | Dataset 2 Indirect   |
-| (Direct) Join                                  | Alice lives in France, Alice - France, Bob lives in Germany, Bob - Germany, John lives in USA, John -                                                                                    | USA             | First corruption is person outside the prompt & Second corruption is person repeated from the prompt                                                                                                                             | Lucy lives in Italy, Lucy - Italy, Tom lives in Spain, Tom - Spain, Sara lives in Canada, Michael -  & Alice lives in France, Alice - France, Bob lives in Germany, Bob - Germany, John lives in USA, Alice -                | Dataset 3 Direct     |
-| (Direct) Knowledge Retrieval                   | Italy - Rome, Spain - Madrid, Canada - Ottawa, Germany -                                                                                                                                    | Berlin          | Corruption in the middle country and repeat the country which has a corruption to see if the model repeats the incorrect city or breaks                                                                                          | Italy - Rome, Spain - Bucharest, Canada - Ottawa, Spain -                                                                                                                                                                       | Dataset 2 Direct     |
-| (Indirect) Join                                | Prompt 1: Alice lives in France, France - Alice, Bob lives in Germany, Germany - Bob, John lives in USA, USA - & Prompt 2: Lucy lives in Italy, Italy - Lucy, Tom lives in Spain, Spain - Tom, Sara lives in Canada, Canada -        | John, Sara      | First corruption is city outside the prompt & Second corruption is city repeated from the prompt                                                                                                                                | Alice lives in France, France - Alice, Bob lives in Germany, Germany - Bob, John lives in USA, Peru - John & Lucy lives in Italy, Italy - Lucy, Tom lives in Spain, Spain - Tom, Sara lives in Canada, Italy - Sara             | Dataset 3 Indirect   |
+| (Indirect) Knowledge-Based In-Context Retrieval | Prompt 1: Alice lives in France, Paris - Alice, John lives in Germany, Berlin - John, Peter lives in USA, Washington - & Prompt 2: Lucy lives in Turkey, Ankara - Lucy, Sara lives in Italy, Rome - Sara, Bob lives in Spain, Madrid - | Peter, Bob      | First corruption is different country outside the prompt & Second corruption is repeated capital from the prompt                                                                                                                | Alice lives in France, Paris - Alice, John lives in Germany, Berlin - John, Peter lives in Spain, Washington - Peter & Lucy lives in Turkey, Ankara - Lucy, Sara lives in Italy, Rome - Sara, Bob lives in Spain, Ankara - Bob    | `kbicr_indirect.py`         |
+| (Indirect) Knowledge Retrieval                 | Rome - Italy, Madrid - Spain, Ottawa - Canada, Berlin -                                                                                                                                  | Germany         | Corrupt the middle city and repeat the city which has a corruption to see if the model repeats the incorrect country or breaks                                                                                                    | Rome - Italy, Bucharest - Spain, Ottawa - Canada, Bucharest -                                                                                                                                                                   | `knowledge_retrieval_indirect.py`   |
+| (Indirect) Join                                | Prompt 1: Alice lives in France, France - Alice, Bob lives in Germany, Germany - Bob, John lives in USA, USA - & Prompt 2: Lucy lives in Italy, Italy - Lucy, Tom lives in Spain, Spain - Tom, Sara lives in Canada, Canada -        | John, Sara      | First corruption is city outside the prompt & Second corruption is city repeated from the prompt                                                                                                                                | Alice lives in France, France - Alice, Bob lives in Germany, Germany - Bob, John lives in USA, Peru - John & Lucy lives in Italy, Italy - Lucy, Tom lives in Spain, Spain - Tom, Sara lives in Canada, Italy - Sara             | `join_indirect.py`  |
 
 
 ## ACDC for Knowledge-Based In-Context Retrieval
 
-Create and compare circuits for the following: 
-
-1. indirect KBICR with indirect K + J 
-2. direct KBICR with direct K + J
+First clone and setup the environment from the [ACDC submodule](https://github.com/Iust1n2/Automatic-Circuit-Discovery/tree/f5fe6c1df4e5179152211023501ae755a5df5759).  
 
 To run the ACDC algorithm on a task (from Prompting), three steps are required:
 
 First, in `acdc/hybridretrieval/utils.py` in line 20 import the dataset: 
 ```
-from acdc.hybridretrieval.hybrid_retrieval_dataset3direct import HybridRetrievalDataset
+from acdc.hybridretrieval.kbicr_indirect import HybridRetrievalDataset
 ```
 
 Then, in `acdc/main.py` in line 390 use a save path like so:
@@ -106,15 +100,15 @@ python main.py --task hybrid-retrieval --zero-ablation --threshold 0.15 --indice
 
 In order to verify the performance of the task circuit, because our task is composed of two subtasks: Knowledge Retrieval and Join, by running ACDC again for the two subtasks we can verify if the two resulting circuits use most of the same components. 
 
-This come as an additional phase in our experiment. We want to see if components for either or from the two smaller circuits are recovered in the bigger circuits. Algorithmically, we created a setting in which nodes fall into 7 categories and for simpliciy we labelled them as J (Join), K (Knowledge) and KJ (Join + Knowledge). So each node can be of the following: 
+This come as an additional phase in our experiment. We want to see if components for either or from the two smaller circuits are recovered in the bigger circuits. Algorithmically, we created a setting in which nodes fall into 7 categories and for simpliciy we labelled them as J (Join), K (Knowledge) and M (Multiple: Join + Knowledge). So each node can be of the following: 
 
 1. J
 2. K
-3. KJ
+3. M
 4. J & K
-5. J & KJ
-6. K & KJ
-7. J & K & KJ
+5. J & M
+6. K & M
+7. J & K & M
 
 This second phase of our experiment follows this intuition:
 
@@ -155,3 +149,13 @@ Now we have three resources to check for internal circuits and information flow 
     - link to [repo](https://github.com/jmerullo/lm_vector_arithmetic/blob/main/demo.ipynb)
     - `word2vec_llm/word2vec_kbicr.ipynb`
     - ! Note: It is probably the easiest out of the 3 to customize for GPT2-Small. Nice and clean code for vocabulary projections for overall use in MLPs and heads.
+
+## TODO
+
+<details>
+<!-- <summary>Mostly finished TODO list</summary> -->
+
+[  ] Run Subnetwork Probing for KBICR
+[ ? ] Fix subgraph loading (not able to do inference) 
+[ ] Fix `dissecting_factual_associations/create_json.py` script for information flow analysis notebook 
+</details>
