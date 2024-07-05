@@ -23,7 +23,7 @@
     "attribute": "Tokyo",
     "template": "{} lives in, {} - {}",
     "prediction": "Michael",
-    "prompt": "Tom lives in Canada, Toronto - Tom, Anna lives in Australia, Canberra - Anna, Michael lives in Japan, Tokyo ",
+    "prompt": "Tom lives in Canada, Toronto - Tom, Anna lives in Australia, Canberra - Anna, Michael lives in Japan, Tokyo -",
     "relation_id": "107"
   },
   {
