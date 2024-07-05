@@ -2,7 +2,7 @@
 
 
 <figure>
-  <img src="assets/acdc_circuit.png">
+  <img src="assets/acdc_kbicr_circuit.png">
   <div style="text-align: center;"><figcaption>GPT-2 small circuit for our indirect Knowledge-Based In-Context Retrieval</figcaption></div>
 </figure>
 
@@ -157,12 +157,16 @@ The command to run SP `subnetwork_probing/train.py`:
 python train.py --task hybrid-retrieval --lr 0.001 --lambda_reg 100 > logs/log_kbicr_lr_0.001_lambda_100.txt 2>&1
 ```
 
+We run for several learning rate and lambda regularizer values trying to match the ACDC circuit for KBICR.
+
 ## TODO
 
 <details>
 <!-- <summary>Mostly finished TODO list</summary> -->
 
 [ x ] Run Subnetwork Probing for KBICR
+
 [ ? ] Fix subgraph loading (not able to do inference) 
+
 [ ] Fix `dissecting_factual_associations/create_json.py` script for information flow analysis notebook 
 </details>
