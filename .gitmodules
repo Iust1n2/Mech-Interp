@@ -3,4 +3,5 @@
 	url = https://github.com/Iust1n2/Automatic-Circuit-Discovery.git
 [submodule "edge-attribution-patching"]
 	path = edge-attribution-patching
-	url = https://github.com/Iust1n2/edge-attribution-patching.git
+	url = https://github.com/Iust1n2/edge-attribution-patching
+	branch = main
