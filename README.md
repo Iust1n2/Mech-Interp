@@ -1,4 +1,4 @@
-# Automatic Circuit Discovery for Knowledge-Based In-Context Retrieval
+# Knowledge-Based In-Context Retrieval
 
 <!-- 
 <figure>
@@ -36,15 +36,15 @@ Notebooks for inference are inside the `gpt2` subdirectory. -->
 
 Our aim is to find a circuit of components inside the model that points towards a typical behavior that happens when prompted the same type of prompt. A method that automates circuit finding in LLMs is Automatic Circuit Discovery [(ACDC)](https://arxiv.org/pdf/2304.14997). The main author's [blog post](https://arthurconmy.github.io/automatic_circuit_discovery/) is a simpler walkthrough of ACDC.
 
-Key takeaways:
+<!-- Key takeaways:
 
-1. Observe a behavior or task that a neural network displays, create a dataset that reproduces the behavior in question, and choose a metric to measure the extent to which the model performs the task. We have chosen KL divergence for our metric.
+1. Observe a behavior or task that a neural network displays, create a dataset that reproduces the behavior in question, and choose a metric to measure the extent to which the model performs the task (Logit Difference and KL divergence)
 
 2. Define the scope of the circuit interpretation, i.e. decide to what level of granularity (e.g. attention heads and MLP layers, individual neurons, whether these are split by token position) at which one wants to analyze the network. This results in a computational graph of interconnected model units that perform the given task.
 
-3. Perform an extensive and iterative series of patching experiments, with the goal of removing as many unnecessary edge connections and nodes from the model as possible without hurting performance. 
+3. Perform an extensive and iterative series of patching experiments, with the goal of removing as many unnecessary edge connections and nodes from the model as possible without hurting performance.  -->
 
-We designed a task that combines Knowledge Retrieval from memory with In-Context Retrieval in a single prompt setting, which we call Knowledge-Based In-Context Retrieval.   
+We designed a task that combines Knowledge Retrieval from pretraining memory with In-Context Retrieval in a single prompt setting, which we call Knowledge-Based In-Context Retrieval.   
 
 Knowledge Retrieval: 
 ```
@@ -53,7 +53,7 @@ Russia - Moscow
 USA - ...
 ```
 
-In-Context Retrieval or informally used in our workflow as Join (relationship between person and country/capital):
+In-Context Retrieval (relationship between person and country/capital):
 ```
 Alice lives in France, Alice - ...
 Tom lives in Russia, Tom - ...
@@ -62,41 +62,31 @@ John lives in USA, John - ...
 
 The resulting prompt is `Alice lives in France, Paris - Alice, Tom lives in Russia, Moscow - Tom, John lives in USA, Washington -`.
 
-We carefully choose words that are tokenized with a single token (notebook for verifying tokenization `gpt2/word_tokenization.ipynb`). The prompt datasets alongside explanations for corruptions are given in the table below:
+The model should retrieve John which is referred to indirectly by the capital.
+
+We use single token words (notebook for verifying tokenization `gpt2/word_tokenization.ipynb`).
 
 ## Prompt Dataset
 
 
 | **Clean Prompt**                                                                    | **Corruption Schema**                                           | **Corrupted Prompt**                                                                | **Script Path**                          |
 |-------------------------------------------------------------------------------------|-----------------------------------------------------------------|-------------------------------------------------------------------------------------|------------------------------------------|
-| Alice lives in France, Paris - Alice, Tom lives in Russia, Moscow - Tom, John lives in USA, Washington - | replace final name with middle name: `{name1} lives in {country1}, {capital1} - {name1}, {name3} lives in {country2}, {capital2} - {name3}, {name2} lives in {country3}, {capital3} -`  | Alice lives in France, Paris - Alice, John lives in Russia, Moscow - John, Tom lives in USA, Washington - Tom | In the `Automatic-Circuit-Discovery` submodule - `acdc/hybridretrieval/datasets/kbicr_template_indirect.py` |
+| Alice lives in France, Paris - Alice, Tom lives in Russia, Moscow - Tom, John lives in USA, Washington - John | replace final name with middle name: `{name1} lives in {country1}, {capital1} - {name1}, {name3} lives in {country2}, {capital2} - {name3}, {name2} lives in {country3}, {capital3} - {name2}`  | Alice lives in France, Paris - Alice, John lives in Russia, Moscow - John, Tom lives in USA, Washington - Tom | In ACDC submodule: `acdc/hybridretrieval/datasets/kbicr_template_indirect.py` |
 
-<!-- | Task                                          | Correct Prompt                                                                                                                                                                                                                                         | Expected Answer | Corruption                                                                                                 | Corrupted Prompt                                                                                                                                                                                                                     | Dataset                      |
-|-----------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------|------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------|
-| (Indirect) Knowledge-Based In-Context Retrieval | Prompt 1: Alice lives in France, Paris - Alice, John lives in Germany, Berlin - John, Peter lives in USA, Washington - & Prompt 2: Lucy lives in Turkey, Ankara - Lucy, Sara lives in Italy, Rome - Sara, Bob lives in Spain, Madrid -                   | Peter, Bob      | First corruption is different country outside the prompt & Second corruption is repeated capital from the prompt | Alice lives in France, Paris - Alice, John lives in Germany, Berlin - John, Peter lives in Spain, Washington - Peter & Lucy lives in Turkey, Ankara - Lucy, Sara lives in Italy, Rome - Sara, Bob lives in Spain, Ankara - Bob          | `kbicr_indirect.py`          |
-| (Indirect) Knowledge Retrieval                 | Rome - Italy, Madrid - Spain, Ottawa - Canada, Berlin -                                                                                                                                                                                                | Germany         | Corrupt the middle city and repeat the city which has a corruption to see if the model repeats the incorrect country or breaks | Rome - Italy, Bucharest - Spain, Ottawa - Canada, Bucharest -                                                                                                                                                                         | `knowledge_retrieval_indirect.py` |
-| (Indirect) Join                                | Prompt 1: Alice lives in France, France - Alice, Bob lives in Germany, Germany - Bob, John lives in USA, USA - & Prompt 2: Lucy lives in Italy, Italy - Lucy, Tom lives in Spain, Spain - Tom, Sara lives in Canada, Canada -                             | John, Sara      | First corruption is city outside the prompt & Second corruption is city repeated from the prompt               | Alice lives in France, France - Alice, Bob lives in Germany, Germany - Bob, John lives in USA, Peru - John & Lucy lives in Italy, Italy - Lucy, Tom lives in Spain, Spain - Tom, Sara lives in Canada, Italy - Sara                    | `join_indirect.py`            | -->
-
-
-## Running ACDC for Knowledge-Based In-Context Retrieval
+## ACDC
 
 First clone and setup the environment from the [ACDC submodule](https://github.com/Iust1n2/Automatic-Circuit-Discovery/tree/f5fe6c1df4e5179152211023501ae755a5df5759).  
 
-To run the ACDC algorithm on a task (from Prompting), three steps are required:
-
-First, in `acdc/hybridretrieval/utils.py` in line 20 import the dataset: 
-```
-from acdc.hybridretrieval.kbicr_indirect import HybridRetrievalDataset
-```
+Running ACDC:
 
 Then, in `acdc/main.py` in line 390 use a save path like so:
 ```
-save_path = "acdc/hybridretrieval/acdc_results/ims_hybridretrieval_indirect_0.15"
+save_path = "acdc/hybridretrieval/acdc_results/kbicr_logit_diff_0.1"
 ```
 
-And finally run the following command in the terminal for run with zero activation, alternatively for corruption activation remove `--zero-ablation` flag: 
+And finally run the following command in the terminal for run with zero ablation, alternatively for corruption activation remove `--zero-ablation` flag: 
 ```
-python main.py --task hybrid-retrieval --zero-ablation --metric kl_div --threshold 0.15 --indices-mode reverse --first-cache-cpu False --second-cache-cpu False --max-num-epochs 100000 --local-dir hybridretrieval/acdc_results --dataset kbicr_indirect > log.txt 2>&1
+python main.py --task hybrid-retrieval --zero-ablation --metric logit_diff_0.1 --threshold 0.1 --indices-mode reverse --first-cache-cpu False --second-cache-cpu False --max-num-epochs 100000 --local-dir hybridretrieval/acdc_results --dataset kbicr > log.txt 2>&1
 ```
 
 For running multiple experiments: `./run_kbicr_experiments.sh`
@@ -140,7 +130,7 @@ gv2gml combined_graph_indirect_color_labels.gv > combined_graph_indirect_color_l
 
 ## Subnetwork Probing
 
-The command to run SP `subnetwork_probing/train.py`:
+To run SP `subnetwork_probing/train.py`:
 
 ```
 python train.py --task hybrid-retrieval --lr 0.001 --lambda_reg 100 --save_dir results > logs/log_kbicr_lr_0.001_lambda_100.txt 2>&1
@@ -148,11 +138,9 @@ python train.py --task hybrid-retrieval --lr 0.001 --lambda_reg 100 --save_dir r
 
 <!-- We run for several learning rate and lambda regularizer values trying to match the ACDC circuit for KBICR. -->
 
-## Explainability
+## Investigation Experiments
 
-Now we have three resources to check for internal circuits and information flow for our task: 
-
-1. Dissecting Factual Associations:
+1. Attention Knockout and Attribute Extraction Rate
     - link to [repo](https://github.com/google-research/google-research/tree/master/dissecting_factual_predictions)
     - `dissecting_factual_predictions/factual_associations_dissection.ipynb`
 
@@ -160,33 +148,46 @@ Now we have three resources to check for internal circuits and information flow 
     - link to [repo](https://github.com/roeehendel/icl_task_vectors)
     - `icl_task_vectors/exploration.ipynb` 
     - ! Note: .yaml environment not working properly, tried with a `pip install -r requirements.txt`, modified the code to run GPT2-Small but the code has some further problems. Might look into it just for code intuition and suggestions for working with Hooks in Transformers   -->
-
+<!-- 
 2. Language Models Implement Word2Vec Arithmetic: 
     - link to [repo](https://github.com/jmerullo/lm_vector_arithmetic/blob/main/demo.ipynb)
-    - `word2vec_llm/word2vec_kbicr.ipynb`
+    - `word2vec_llm/word2vec_kbicr.ipynb` -->
 
-3. Inspecting Attention Heads: 
+
+2. Circuit Discovery
 
 - `embedding-space/exploration.ipynb` contains analysis of parameter matrices $W_{VO}$ and $W_{QK}$ for individual Attention Heads 
    - link to [repo](https://github.com/guy-dar/embedding-space)
 
-- Direct Logit Attribution of Attention Heads: `HookedTransformer.ipynb` and `HookedTransformer2.ipynb`
+- Direct Logit Attribution, Activation Patching & Path Patching: `notebooks/Circuit_Discovery.ipynb` and `notebooks/Circuit_Discovery2.ipynb`
   -  adaptations of [Main Demo](https://colab.research.google.com/github/neelnanda-io/TransformerLens/blob/main/demos/Main_Demo.ipynb#scrollTo=WTc1ZW-WAwl4) and [Exploratory Analysis Demo](https://colab.research.google.com/github/TransformerLensOrg/TransformerLens/blob/main/demos/Exploratory_Analysis_Demo.ipynb#scrollTo=4-qMuGv91NvJ) from the [TransformerLens library](https://transformerlensorg.github.io/TransformerLens/)
+
+- Attribution Patching: `notebooks/Attribution_Patching.ipynb`
+  - adaptation of [Attribution Patching Demo - TLens]((https://colab.research.google.com/github/TransformerLensOrg/TransformerLens/blob/main/demos/Attribution_Patching_Demo.ipynb))
 
 ## TODO
 
 <details>
 <!-- <summary>Mostly finished TODO list</summary> -->
 
+[ x ] Create template script for prompt dataset 
+
+[ x ] Automate ACDC and SP runs 
+
+[ x ] Run ACDC with new prompt dataset (1 token words) and corruption schema 
+
 [ x ] Run Subnetwork Probing for KBICR
 
-[ x ] Create template script for prompt dataset (keeping in mind that ACDC is sensitive to dataset perturbations)
+[ x ] Assign function to each Attention Head with Activation Patching and Path Patching
 
-[ x ] Automate: ACDC and SP runs
+[ x ] Finish off finding the canonical circuit
 
-[ ... ] Run ACDC with new prompt dataset (1 token words) and corruption schema 
+[ x ] Script for algorithms statistics - node monotonicity and completeness vs the canonical circuit (SP doesn't have support for visualization, so parsing the log files is fine)
+
+[ ... ] Finish the `roc.ipynb` analysis for roc curves for multiple ACDC and SP runs
 
 <!-- [ ? ] Add support for accuracy statistics (ROC) (not working as we do not have a canonical dataset) -->
 
 <!-- [ ] Fix `dissecting_factual_associations/create_json.py` script for subject-attribute dataset  -->
+
 </details>
