@@ -7,4 +7,4 @@
 	branch = main
 [submodule "Easy-Transformer"]
 	path = Easy-Transformer
-	url = https://github.com/Iust1n2/Easy-Transformer.git
+	url = git@github.com:Iust1n2/Easy-Transformer.git
