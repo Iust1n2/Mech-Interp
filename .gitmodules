@@ -5,3 +5,6 @@
 	path = edge-attribution-patching
 	url = https://github.com/Iust1n2/edge-attribution-patching
 	branch = main
+[submodule "Easy-Transformer"]
+	path = Easy-Transformer
+	url = https://github.com/Iust1n2/Easy-Transformer.git

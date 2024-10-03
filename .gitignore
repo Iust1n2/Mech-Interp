@@ -24,7 +24,7 @@ embedding-space/
 gpt2/word_tokenization.ipynb
 assets/kbicr_logit_diff_0.1_template.png
 assets/logit_diff_head.png
-Easy-Transformer/
+Easy-Transformer/*
 notebooks/IOI_Circuit_Discovery.ipynb
 notebooks/kbicr_dataset.py
 notebooks/Hook_Transformer.ipynb
